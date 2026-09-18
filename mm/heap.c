@@ -4,6 +4,7 @@
 #include <kos/heap.h>
 #include <kos/memory.h>
 #include <kos/pmm.h>
+#include <kos/sync.h>
 #include <kos/vmm.h>
 
 enum {
@@ -29,6 +30,7 @@ struct kernel_heap {
 };
 
 static struct kernel_heap heap;
+static struct kos_spinlock heap_lock = KOS_SPINLOCK_INITIALIZER;
 
 static bool align_up(uint64_t value, uint64_t alignment, uint64_t *aligned_value) {
     if (value > UINT64_MAX - (alignment - 1)) {
@@ -148,25 +150,31 @@ static void reclaim_trailing_block(void) {
 }
 
 bool heap_initialize(void) {
+    uint64_t flags = spinlock_lock_irqsave(&heap_lock);
     heap.first = 0;
     heap.last = 0;
     heap.mapped_bytes = 0;
     heap.active_allocations = 0;
     heap.initialized = true;
+    spinlock_unlock_irqrestore(&heap_lock, flags);
     return true;
 }
 
 void *kmalloc(uint64_t size) {
+    uint64_t flags = spinlock_lock_irqsave(&heap_lock);
     if (!heap.initialized || size == 0) {
+        spinlock_unlock_irqrestore(&heap_lock, flags);
         return 0;
     }
     if (!align_up(size, HEAP_ALIGNMENT, &size)) {
+        spinlock_unlock_irqrestore(&heap_lock, flags);
         return 0;
     }
     struct heap_block *block = find_free_block(size);
     if (block == 0) {
         block = grow_heap(size);
         if (block == 0) {
+            spinlock_unlock_irqrestore(&heap_lock, flags);
             return 0;
         }
     }
@@ -188,16 +196,21 @@ void *kmalloc(uint64_t size) {
     }
     block->free = false;
     ++heap.active_allocations;
-    return (uint8_t *)block + sizeof(*block);
+    void *allocation = (uint8_t *)block + sizeof(*block);
+    spinlock_unlock_irqrestore(&heap_lock, flags);
+    return allocation;
 }
 
 bool kfree(void *pointer) {
+    uint64_t flags = spinlock_lock_irqsave(&heap_lock);
     if (!heap.initialized || pointer == 0) {
+        spinlock_unlock_irqrestore(&heap_lock, flags);
         return false;
     }
     uint64_t pointer_address = (uint64_t)pointer;
     if (heap.mapped_bytes == 0 || pointer_address < HEAP_BASE + sizeof(struct heap_block)
         || pointer_address >= HEAP_BASE + heap.mapped_bytes) {
+        spinlock_unlock_irqrestore(&heap_lock, flags);
         return false;
     }
     struct heap_block *candidate = (struct heap_block *)(pointer_address - sizeof(struct heap_block));
@@ -206,10 +219,12 @@ bool kfree(void *pointer) {
         block = block->next;
     }
     if (block == 0 || block->free) {
+        spinlock_unlock_irqrestore(&heap_lock, flags);
         return false;
     }
 
     if (heap.active_allocations == 0) {
+        spinlock_unlock_irqrestore(&heap_lock, flags);
         return false;
     }
     block->free = true;
@@ -219,13 +234,85 @@ bool kfree(void *pointer) {
         merge_with_next(block->previous);
     }
     reclaim_trailing_block();
+    spinlock_unlock_irqrestore(&heap_lock, flags);
     return true;
 }
 
+void *kcalloc(uint64_t num, uint64_t size) {
+    if (num != 0 && size > UINT64_MAX / num) {
+        return 0;
+    }
+    uint64_t total = num * size;
+    void *ptr = kmalloc(total);
+    if (ptr != 0) {
+        for (uint64_t i = 0; i < total; ++i) {
+            ((uint8_t *)ptr)[i] = 0;
+        }
+    }
+    return ptr;
+}
+
+void *krealloc(void *pointer, uint64_t new_size) {
+    if (pointer == 0) {
+        return kmalloc(new_size);
+    }
+    if (new_size == 0) {
+        (void)kfree(pointer);
+        return 0;
+    }
+
+    uint64_t flags = spinlock_lock_irqsave(&heap_lock);
+    if (!heap.initialized) {
+        spinlock_unlock_irqrestore(&heap_lock, flags);
+        return 0;
+    }
+
+    uint64_t pointer_address = (uint64_t)pointer;
+    if (heap.mapped_bytes == 0 || pointer_address < HEAP_BASE + sizeof(struct heap_block)
+        || pointer_address >= HEAP_BASE + heap.mapped_bytes) {
+        spinlock_unlock_irqrestore(&heap_lock, flags);
+        return 0;
+    }
+
+    struct heap_block *candidate = (struct heap_block *)(pointer_address - sizeof(struct heap_block));
+    struct heap_block *block = heap.first;
+    while (block != 0 && block != candidate) {
+        block = block->next;
+    }
+    if (block == 0 || block->free) {
+        spinlock_unlock_irqrestore(&heap_lock, flags);
+        return 0;
+    }
+
+    uint64_t old_size = block->size;
+    spinlock_unlock_irqrestore(&heap_lock, flags);
+
+    if (new_size <= old_size) {
+        return pointer;
+    }
+
+    void *new_ptr = kmalloc(new_size);
+    if (new_ptr == 0) {
+        return 0;
+    }
+    uint64_t copy_bytes = old_size < new_size ? old_size : new_size;
+    for (uint64_t i = 0; i < copy_bytes; ++i) {
+        ((uint8_t *)new_ptr)[i] = ((uint8_t *)pointer)[i];
+    }
+    (void)kfree(pointer);
+    return new_ptr;
+}
+
 uint64_t heap_active_allocation_count(void) {
-    return heap.active_allocations;
+    uint64_t flags = spinlock_lock_irqsave(&heap_lock);
+    uint64_t result = heap.active_allocations;
+    spinlock_unlock_irqrestore(&heap_lock, flags);
+    return result;
 }
 
 uint64_t heap_mapped_page_count(void) {
-    return heap.mapped_bytes / PAGE_SIZE;
+    uint64_t flags = spinlock_lock_irqsave(&heap_lock);
+    uint64_t result = heap.mapped_bytes / PAGE_SIZE;
+    spinlock_unlock_irqrestore(&heap_lock, flags);
+    return result;
 }

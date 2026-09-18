@@ -205,6 +205,12 @@ bool keyboard_read_char(char *character) {
     return true;
 }
 
+void keyboard_push_char(char character) {
+    if (character != '\0') {
+        keyboard_enqueue(character);
+    }
+}
+
 uint16_t keyboard_pending_count(void) {
     return (uint16_t)((input_head - input_tail) & KEYBOARD_BUFFER_MASK);
 }

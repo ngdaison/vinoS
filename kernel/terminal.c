@@ -6,6 +6,7 @@
 #include <kos/cpu.h>
 #include <kos/keyboard.h>
 #include <kos/log.h>
+#include <kos/net.h>
 #include <kos/serial.h>
 #include <kos/terminal.h>
 #include <kos/task.h>
@@ -81,6 +82,7 @@ bool terminal_initialize(void) {
 KOS_NORETURN void terminal_run(void) {
     for (;;) {
         task_reschedule_if_needed();
+        net_poll();
         char character;
         if (keyboard_read_char(&character)) {
             terminal_handle_character(character);

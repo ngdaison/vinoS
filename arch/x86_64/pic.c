@@ -101,3 +101,10 @@ void pic_send_eoi(uint8_t irq) {
     }
     io_out8(PIC_MASTER_COMMAND, PIC_END_OF_INTERRUPT);
 }
+
+void pic_disable(void) {
+    master_mask = 0xff;
+    slave_mask = 0xff;
+    pic_write_masks();
+    initialized = false;
+}

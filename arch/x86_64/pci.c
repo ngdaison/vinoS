@@ -34,6 +34,11 @@ static uint32_t pci_read32(uint8_t bus, uint8_t device, uint8_t function, uint8_
     return io_in32(PCI_CONFIGURATION_DATA);
 }
 
+static void pci_write32(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, uint32_t value) {
+    io_out32(PCI_CONFIGURATION_ADDRESS, pci_configuration_address(bus, device, function, offset));
+    io_out32(PCI_CONFIGURATION_DATA, value);
+}
+
 static uint16_t pci_read16(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset) {
     uint32_t value = pci_read32(bus, device, function, offset);
     return (uint16_t)(value >> ((offset & 2u) * 8u));
@@ -106,4 +111,25 @@ uint64_t pci_device_count(void) { return discovered_device_count; }
 
 const struct pci_device *pci_device_at(uint64_t index) {
     return index < discovered_device_count ? &devices[index] : 0;
+}
+
+const struct pci_device *pci_find_device(uint16_t vendor_id, uint16_t device_id) {
+    for (uint64_t index = 0; index < discovered_device_count; ++index) {
+        if (devices[index].vendor_id == vendor_id && devices[index].device_id == device_id) {
+            return &devices[index];
+        }
+    }
+    return 0;
+}
+
+bool pci_enable_memory_bus_mastering(const struct pci_device *device) {
+    if (device == 0 || pci_read16(device->bus, device->device, device->function,
+            PCI_VENDOR_ID_OFFSET) != device->vendor_id) {
+        return false;
+    }
+    uint32_t command_status = pci_read32(device->bus, device->device, device->function, 0x04);
+    command_status |= (1u << 1) | (1u << 2);
+    pci_write32(device->bus, device->device, device->function, 0x04, command_status);
+    uint16_t command = pci_read16(device->bus, device->device, device->function, 0x04);
+    return (command & ((1u << 1) | (1u << 2))) == ((1u << 1) | (1u << 2));
 }

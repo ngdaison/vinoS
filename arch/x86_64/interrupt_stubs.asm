@@ -31,6 +31,7 @@ isr_stub_%+%1:
     %assign vector vector + 1
 %endrep
 
+align 16
 isr_common:
     push rax
     push rbx
@@ -51,6 +52,7 @@ isr_common:
     mov r12, rsp
     and rsp, -16
     mov rdi, r12
+    cld
     call interrupt_dispatch
 
     mov rsp, r12

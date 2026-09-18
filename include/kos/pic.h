@@ -16,5 +16,6 @@ bool pic_unmask_irq(uint8_t irq);
 bool pic_is_spurious_irq(uint8_t irq);
 void pic_send_spurious_eoi(uint8_t irq);
 void pic_send_eoi(uint8_t irq);
+void pic_disable(void);
 
 #endif

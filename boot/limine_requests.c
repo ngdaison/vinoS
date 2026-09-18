@@ -49,5 +49,20 @@ volatile struct limine_module_request kos_module_request = {
     .response = 0,
 };
 
+KOS_USED KOS_SECTION(".limine_requests")
+volatile struct limine_rsdp_request kos_rsdp_request = {
+    .id = LIMINE_RSDP_REQUEST_ID,
+    .revision = 0,
+    .response = 0,
+};
+
+KOS_USED KOS_SECTION(".limine_requests")
+volatile struct limine_mp_request kos_mp_request = {
+    .id = LIMINE_MP_REQUEST_ID,
+    .revision = 0,
+    .response = 0,
+    .flags = 0,
+};
+
 KOS_USED KOS_SECTION(".limine_requests_end")
 static volatile uint64_t limine_requests_end_marker[2] = LIMINE_REQUESTS_END_MARKER;

@@ -26,5 +26,7 @@ struct pci_device {
 bool pci_enumerate(void);
 uint64_t pci_device_count(void);
 const struct pci_device *pci_device_at(uint64_t index);
+const struct pci_device *pci_find_device(uint16_t vendor_id, uint16_t device_id);
+bool pci_enable_memory_bus_mastering(const struct pci_device *device);
 
 #endif

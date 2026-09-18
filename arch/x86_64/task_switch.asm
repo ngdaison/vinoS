@@ -6,7 +6,7 @@ global task_switch
 section .text
 
 ; void task_switch(struct task_context *old, const struct task_context *next)
-; Save callee-saved state for the current C call chain, then jump to next.
+; Save callee-saved state and RFLAGS for current C call chain, then jump to next.
 task_switch:
     mov [rdi + 0], rbx
     mov [rdi + 8], rbp
@@ -25,6 +25,8 @@ task_switch:
     mov r14, [rsi + 32]
     mov r15, [rsi + 40]
     mov rsp, [rsi + 48]
+    push qword [rsi + 64]
+    popfq
     jmp qword [rsi + 56]
 .resume:
     ret

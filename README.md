@@ -1,107 +1,29 @@
-# KOS
+# KOS vinoS
 
-KOS is an independent x86_64 desktop operating-system project. Its long-term
-goal is a polished graphical OS in the broad category of macOS, Windows, and
-desktop Linux; it is not a clone of, nor binary-compatible with, any of them.
+KOS is an independent x86_64 desktop operating-system project. Its long-term goal is a polished graphical OS in the broad category of macOS, Windows, and desktop Linux; it is not a clone of, nor binary-compatible with, any of them.
 
-## Current milestone
+## Key Highlights
 
-The repository currently completes Phases 0 through 10, the cooperative
-kernel-thread foundation of Phase 11, and the initramfs/VFS foundation of Phase
-12: reproducible host setup,
-Limine boot, serial and framebuffer diagnostics, CPU exception handling,
-physical/virtual memory management, a reclaiming kernel heap, hardened PIT/PIC
-interrupt dispatch, PS/2 keyboard input, a kernel debug terminal, PCI discovery,
-round-robin kernel threads, and a read-only initramfs VFS.
+- Aore AI OS: Dedicated system for AI agents to control the OS natively, near future goal.
+- Interface Installer: Select custom online interfaces or use the default offline interface during install, near future goal.
 
-The first bootable milestone (`KOS v0.1`) is a kernel foundation, not the final
-desktop experience:
+## Current Features
 
-```text
-boot -> text output -> keyboard input -> command console -> basic RAM management -> timer/interrupts
-```
+- 64-bit monolithic kernel with Limine bootloader
+- PMM, VMM, and dynamic kernel heap
+- SMP multicore and preemptive multitasking
+- Ring 3 isolation and fast syscall path
+- AHCI, NVMe, VirtIO Block, and RAM disk drivers
+- MBR, GPT, block cache, Windows volumes, and FAT32
+- Intel e1000 driver and IPv4 network stack with TCP, UDP, DHCP, DNS
+- HTTP, HTTPS, TLS 1.3, and crypto support
+- ELF64 loader, package manager, and debug terminal
 
-The initial kernel-console commands are `help`, `clear`, `meminfo`, `uptime`,
-`echo`, and `reboot`.
+## Future Goals
 
-## Target
+- Aore AI core subsystem and automation APIs
+- Windows application compatibility layer
+- Online desktop interface installer
 
-- Architecture: x86_64
-- Firmware: UEFI
-- Emulator: QEMU
-- Bootloader: Limine (vendored by the bootstrap script)
-- Kernel language: freestanding C with small, architecture-specific Assembly
-- Kernel style: small monolithic kernel
 
-The longer-term product direction is recorded in [docs/product-vision.md](docs/product-vision.md).
 
-## Repository layout
-
-```text
-arch/x86_64/  CPU-specific code: entry, descriptor tables, interrupts, paging
-boot/         Boot protocol boundary and linker configuration
-drivers/      Serial, framebuffer, timer, and keyboard drivers
-include/      Public kernel headers
-kernel/       Kernel entry and high-level coordination
-lib/          Freestanding utility routines
-mm/           Physical memory, virtual memory, and heap
-docs/         Design decisions and project documentation
-scripts/      Environment validation and project setup helpers
-third_party/  Downloaded dependencies; not committed
-```
-
-## Build and run
-
-Run the environment check in PowerShell:
-
-```powershell
-.\\scripts\\check-environment.ps1
-```
-
-See [docs/environment.md](docs/environment.md) for setup choices. Once the host
-tools are ready, obtain Limine and its protocol/header dependency with:
-
-```powershell
-.\\scripts\\bootstrap-limine.ps1
-```
-
-Build the Phase 2 kernel ELF and prepare a UEFI ESP directory with:
-
-```powershell
-.\\scripts\\build.ps1
-```
-
-Run it in QEMU with:
-
-```powershell
-.\\scripts\\run-qemu.ps1
-```
-
-The expected serial log begins with `KOS: kernel started` and ends at the
-interactive `KOS> ` prompt. To also open QEMU's framebuffer window and inspect
-the text console, use:
-
-```powershell
-.\scripts\run-qemu.ps1 -Display
-```
-
-## Documentation
-
-- [Scope and roadmap](docs/roadmap.md)
-- [Product vision](docs/product-vision.md)
-- [Architecture](docs/architecture.md)
-- [Boot process](docs/boot-process.md)
-- [Environment setup](docs/environment.md)
-- [Coding conventions](docs/coding-conventions.md)
-- [Phase 0-1 implementation prompt](docs/phase-0-1-prompt.md)
-- [Phase 2 boot plan](docs/phase-2-boot.md)
-- [Phase 3 text-console plan](docs/phase-3-text-console.md)
-- [Phase 1-3 optimization notes](docs/phase-1-3-optimization.md)
-- [Phase 4-5 CPU and memory plan](docs/phase-4-5-cpu-memory.md)
-- [Phase 6 virtual memory and kernel heap plan](docs/phase-6-virtual-memory.md)
-- [Phase 7 timer and hardware interrupt plan](docs/phase-7-timer-interrupts.md)
-- [Phases 8-9 keyboard and kernel-terminal plan](docs/phase-8-9-keyboard-terminal.md)
-- [Phases 7-11 runtime foundation](docs/phase-7-11-runtime-foundation.md)
-- [Phases 11-12 multitasking and filesystem plan](docs/phase-11-12-multitasking-files.md)
-- [Optimized master roadmap, phases 0-12](docs/optimized-master-roadmap.md)
-- [Phase 4-6 optimization notes](docs/phase-4-6-optimization.md)

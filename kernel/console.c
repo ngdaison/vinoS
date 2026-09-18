@@ -102,6 +102,14 @@ bool console_is_initialized(void) {
     return console.initialized != 0;
 }
 
+uint64_t console_columns(void) {
+    return console.columns;
+}
+
+uint64_t console_rows(void) {
+    return console.rows;
+}
+
 void console_clear(void) {
     if (!console_is_initialized()) {
         return;

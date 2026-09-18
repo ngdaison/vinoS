@@ -10,5 +10,7 @@ extern volatile struct limine_framebuffer_request kos_framebuffer_request;
 extern volatile struct limine_memmap_request kos_memmap_request;
 extern volatile struct limine_hhdm_request kos_hhdm_request;
 extern volatile struct limine_module_request kos_module_request;
+extern volatile struct limine_rsdp_request kos_rsdp_request;
+extern volatile struct limine_mp_request kos_mp_request;
 
 #endif
