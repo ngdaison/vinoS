@@ -1,0 +1,23 @@
+# Build output
+build/
+dist/
+tools/kos-tool.exe
+
+# Downloaded third-party sources and release assets
+third_party/limine/
+third_party/limine-protocol/
+third_party/limine-binary/
+third_party/tools/
+third_party/font8x8/
+
+# Editor, AI agents and operating-system files
+.vscode/
+.idea/
+.agents/
+.cursor/
+.gemini/
+.claude/
+*.log
+*.swp
+Thumbs.db
+Desktop.ini
